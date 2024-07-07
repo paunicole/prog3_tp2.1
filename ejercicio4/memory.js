@@ -1,4 +1,5 @@
 class Card {
+
     constructor(name, img) {
         this.name = name;
         this.img = img;
@@ -31,9 +32,25 @@ class Card {
         const cardElement = this.element.querySelector(".card");
         cardElement.classList.remove("flipped");
     }
+
+    toggleFlip() {
+        this.isFlipped = !this.isFlipped;
+
+        if (this.isFlipped) {
+            this.#flip();
+        } else {
+            this.#unflip();
+        }
+    }
+
+    matches(otherCard) {
+        return this.name === otherCard.name && this !== otherCard;
+    }
+
 }
 
 class Board {
+
     constructor(cards) {
         this.cards = cards;
         this.fixedGridElement = document.querySelector(".fixed-grid");
@@ -57,6 +74,24 @@ class Board {
         const columns = this.#calculateColumns();
         this.fixedGridElement.className = `fixed-grid has-${columns}-cols`;
     }
+    
+    shuffleCards() {
+        this.cards.sort(() => 0.5 - Math.random());
+    }
+
+    flipDownAllCards() {
+        this.cards.forEach(card => {
+            if (card.isFlipped) {
+                card.toggleFlip();
+            }
+        });
+    }
+
+    reset() {
+        this.shuffleCards();
+        this.flipDownAllCards();
+        this.render();
+    }
 
     render() {
         this.#setGridColumns();
@@ -77,15 +112,15 @@ class Board {
 }
 
 class MemoryGame {
+
     constructor(board, flipDuration = 500) {
         this.board = board;
         this.flippedCards = [];
         this.matchedCards = [];
+
         if (flipDuration < 350 || isNaN(flipDuration) || flipDuration > 3000) {
             flipDuration = 350;
-            alert(
-                "La duración de la animación debe estar entre 350 y 3000 ms, se ha establecido a 350 ms"
-            );
+            alert("La duración de la animación debe estar entre 350 y 3000 ms, se ha establecido a 350 ms");
         }
         this.flipDuration = flipDuration;
         this.board.onCardClick = this.#handleCardClick.bind(this);
@@ -102,6 +137,30 @@ class MemoryGame {
             }
         }
     }
+
+    checkForMatch() {
+        const [card1, card2] = this.flippedCards;
+
+        if (card1.matches(card2)) {
+            this.matchedCards.push(card1, card2);
+        } else {
+            card1.toggleFlip();
+            card2.toggleFlip();
+        }
+
+        this.flippedCards = [];
+
+        if (this.matchedCards.length === this.board.cards.length) {
+            alert("¡Ganaste el juego!");
+        }
+    }
+
+    resetGame() {
+        this.flippedCards = [];
+        this.matchedCards = [];
+        this.board.reset();
+    }
+
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -118,10 +177,13 @@ document.addEventListener("DOMContentLoaded", () => {
         new Card(data.name, data.img),
         new Card(data.name, data.img),
     ]);
+
     const board = new Board(cards);
     const memoryGame = new MemoryGame(board, 1000);
+    board.render()
 
     document.getElementById("restart-button").addEventListener("click", () => {
         memoryGame.resetGame();
     });
+    
 });

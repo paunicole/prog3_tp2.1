@@ -6,11 +6,72 @@ class Currency {
 }
 
 class CurrencyConverter {
-    constructor() {}
 
-    getCurrencies(apiUrl) {}
+    apiUrl;
+    currencies;
 
-    convertCurrency(amount, fromCurrency, toCurrency) {}
+    constructor() {
+        this.apiUrl = "api.frankfurter.app";
+        this.currencies = [];
+        this.currenciesName = [];
+    }
+
+    async getCurrencies(apiUrl) {
+        try {
+            const response = await fetch(`https://${this.apiUrl}/currencies`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            Object.keys(data).map((key) => {
+                this.currencies.push(new Currency(key, data[key]));
+              });
+
+        } catch (error) {
+            console.error('There has been a problem with your fetch operation:', error);
+        }
+    }
+
+    async getCurrenciesName(){
+        try {
+            const response = await fetch(`https://cdn.dinero.today/api/currency.json`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            this.currenciesName = data;
+
+        } catch (error) {
+            console.error('There has been a problem with your fetch operation:', error);
+        }
+    }
+
+    async convertCurrency(amount, fromCurrency, toCurrency) {
+        if (fromCurrency.code === toCurrency.code) {
+            return amount;
+        }
+        try {
+            const response = await fetch(
+              `https://${this.apiUrl}/latest?amount=${amount}&from=${fromCurrency.code}&to=${toCurrency.code}`
+            );
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+      
+            if (!data.rates || !data.rates[toCurrency.code]) {
+                throw new Error('Invalid currency conversion data received');
+            }
+
+            return data.rates[toCurrency.code];
+        } catch (error) {
+            console.error('There has been a problem with your fetch operation:', error);
+            return null;
+        }
+    }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
